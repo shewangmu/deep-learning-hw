@@ -478,7 +478,10 @@ def max_pool_forward(x, pool_param):
     ###########################################################################
     # TODO: Implement the max-pooling forward pass                            #
     ###########################################################################
-    pass
+    height = pool_param['pool_height']
+    width = pool_param['pool_width']
+    stride = pool_param['stride']
+    
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -565,8 +568,14 @@ def softmax_loss(x, y):
   - dx: Gradient of the loss with respect to x
   """
   
-  exp = np.exp(x)
-  [i/np.sum(i) for i in exp]
-
+  N, = y.shape
+  loss = 0
+  dx = np.zeros_like(x)
+  for i in range(N):
+      l = y[i]
+      loss += np.log(x[i][l])
+      dx[i][l] = 1/x[i][l]
+  loss = -loss/N    
+  dx = -dx/N
   return loss, dx
 

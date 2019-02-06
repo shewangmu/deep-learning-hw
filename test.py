@@ -31,13 +31,13 @@ data = {
 }
 
 model_1 = LogisticClassifier(input_dim=20, hidden_dim=30, weight_scale=1, reg=0)
-model_2 = SVM(input_dim=20, hidden_dim=30, weight_scale=1, reg=0.2)
+model_2 = SVM(input_dim=20, hidden_dim=30, weight_scale=1, reg=0)
 
-def train(model):
+def train(model, learning_rate=1e-2):
     solver = Solver(model, data,
                       update_rule='sgd',
                       optim_config={
-                        'learning_rate': 1e-2,  #hidden layer
+                        'learning_rate': learning_rate,  #hidden layer
                         #'learning_rate': 0.5, #single layer
                       },
                       lr_decay=0.95,
@@ -55,5 +55,6 @@ def train(model):
     print("test accuracy is:{}".format(acc/250))
     return y_pred
     
-y_pred = train(model_2)
-param = model_2.params
+#y_pred_svm = train(model_2, learning_rate = 1e-2)
+
+y_pred_logistic = train(model_1, learning_rate=5e-1)

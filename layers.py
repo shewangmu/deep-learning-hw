@@ -481,7 +481,24 @@ def max_pool_forward(x, pool_param):
     height = pool_param['pool_height']
     width = pool_param['pool_width']
     stride = pool_param['stride']
+    N, C, H, W = x.shape
     
+    H_prime = int(1 + (H - height)/stride)
+    W_prime = int(1 + (W - width)/stride)
+    
+    out = np.zeros((N, C, H_prime, W_prime))
+    
+    for i in range(N):
+        for j in range(H_prime):
+            for k in range(W_prime):
+                h_start = stride * j
+                h_end = h_start + height
+                
+                w_start = stride * k
+                w_end = w_start + width
+                pool_window = x[i, :, h_start:h_end, w_start:w_end]
+                pool_window = pool_window.reshape((C, -1))
+                out[i, :, j, k] = np.max(pool_window, axis=1)
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -504,7 +521,32 @@ def max_pool_backward(dout, cache):
     ###########################################################################
     # TODO: Implement the max-pooling backward pass                           #
     ###########################################################################
-    pass
+    x, pool_param = cache
+    height = pool_param['pool_height']
+    width = pool_param['pool_width']
+    stride = pool_param['stride']
+    H, C, H, W = x.shape
+    
+    H_prime = int(1 + (H - height)/stride)
+    W_prime = int(1 + (W - width)/stride)
+    
+    dx = np.zeros_like(x)
+    
+    for i in range(N):
+        for j in range(H_prime):
+            for k in range(W_prime):
+                h_start = stride * j
+                h_end = h_start + height
+                
+                w_start = stride * k
+                w_end = w_start + width
+                
+                for c in range(C):
+                    pool_window = x[i, c, h_start:h_end, w_start:w_end]
+                    index = np.argmax(pool_window)
+                    row = int(index/width)
+                    column = index - row*width
+                    dx[i, c, h_start+row, w_start+column] += dout[i, c, j, k]
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################

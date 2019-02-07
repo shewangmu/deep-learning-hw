@@ -7,7 +7,7 @@ class ConvNet(object):
   """
   A convolutional network with the following architecture:
   
-  conv - relu - 2x2 max pool - fc - softmax
+  conv - relu - 2x2 max pool - fc - relu - fc -softmax
 
   You may also consider adding dropout layer or batch normalization layer. 
   
@@ -47,12 +47,19 @@ class ConvNet(object):
     # hidden affine layer, and keys 'W3' and 'b3' for the weights and biases   #
     # of the output affine layer.                                              #
     ############################################################################
-    pass
+    C, H, W = input_dim
+    F, HH, WW = num_filters, filter_size, filter_size
+    self.params['W1'] = np.random.normal(scale = weight_scale, size = (F, C, HH, WW))
+    self.params['b1'] = np.zeros((F, C, HH, WW))
+    self.params['W2'] = np.random.normal(scale = weight_scale, size = (int(F*H*W/4), hidden_dim))
+    self.params['b2'] = np.zeros((hidden_dim,))
+    self.params['W3'] = np.random.normal(scale = weight_scale, size = (hidden_dim, num_classes))
+    self.params['b3'] = np.zeros((num_classes,))
     ############################################################################
     #                             END OF YOUR CODE                             #
     ############################################################################
 
-    for k, v in self.params.iteritems():
+    for k, v in self.params.items():
       self.params[k] = v.astype(dtype)
      
  
@@ -69,17 +76,31 @@ class ConvNet(object):
     # pass conv_param to the forward pass for the convolutional layer
     filter_size = W1.shape[2]
     conv_param = {'stride': 1, 'pad': (filter_size - 1) / 2}
-
+    
+    pad_num = int(conv_param['pad'])
+    x_pad = np.pad(X, ((0,0),(0,0),(pad_num,pad_num),(pad_num,pad_num)), 'constant', constant_values=(0,0))
+    
+    s_conv, cache1 = conv_forward(x_pad, W1)
+    
     # pass pool_param to the forward pass for the max-pooling layer
     pool_param = {'pool_height': 2, 'pool_width': 2, 'stride': 2}
-
+    s_max, cache2 = max_pool_forward(s_conv, pool_param)
+    
     scores = None
     ############################################################################
     # TODO: Implement the forward pass for the three-layer convolutional net,  #
     # computing the class scores for X and storing them in the scores          #
     # variable.                                                                #
     ############################################################################
-    pass
+    s_max_size = s_max.shape
+    s_max = s_max.reshape((s_max_size[0],-1))
+    s_fc1, cache3 = fc_forward(s_max, W2, b2)
+    s_relu1, s_fc1 = relu_forward(s_fc1)
+    s_fc2, cache4 = fc_forward(s_relu1, W3, b3)
+    
+    exp = np.exp(s_fc2)
+    scores = [i/np.sum(i) for i in exp]
+    scores = np.array(scores)
     ############################################################################
     #                             END OF YOUR CODE                             #
     ############################################################################
@@ -94,7 +115,26 @@ class ConvNet(object):
     # data loss using softmax, and make sure that grads[k] holds the gradients #
     # for self.params[k]. Don't forget to add L2 regularization!               #
     ############################################################################
-    pass
+    loss, dscores = softmax_loss(scores, y)
+    dexp = np.zeros_like(dscores)
+    for i in range(len(dscores)):
+        l = y[i]
+        dexp[i] = dscores[i]*(np.sum(exp[i])-exp[i][l])/np.sum(exp[i])**2
+    
+    ds_fc2 = dexp * exp
+    ds_relu1, dw3, db3 = fc_backward(ds_fc2, cache4)
+    ds_fc1 = relu_backward(ds_relu1, s_fc1)
+    ds_max, dw2, db2 = fc_backward(ds_fc1, cache3)
+    ds_max = ds_max.reshape(s_max_size)
+    ds_conv = max_pool_backward(ds_max, cache2)
+    dx, dw1, db1 = conv_backward(ds_conv, cache1)
+    
+    grads['W1'] = dw1
+    grads['b1'] = db1
+    grads['W2'] = dw2
+    grads['b2'] = db2
+    grads['W3'] = dw3
+    grads['b3'] = db3
     ############################################################################
     #                             END OF YOUR CODE                             #
     ############################################################################

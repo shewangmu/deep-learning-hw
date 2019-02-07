@@ -525,7 +525,7 @@ def max_pool_backward(dout, cache):
     height = pool_param['pool_height']
     width = pool_param['pool_width']
     stride = pool_param['stride']
-    H, C, H, W = x.shape
+    N, C, H, W = x.shape
     
     H_prime = int(1 + (H - height)/stride)
     W_prime = int(1 + (W - width)/stride)

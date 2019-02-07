@@ -8,15 +8,15 @@ X, y = loadlocal_mnist(
         images_path='./data/raw/train-images-idx3-ubyte', 
         labels_path='./data/raw/train-labels-idx1-ubyte')
 
-x_train = X[:10000,:]/255
-y_train = y[:10000]
-x_val = X[10000:20000,:]/255
-y_val = y[10000:20000]
+x_train = X[:1000,:]
+y_train = y[:1000]
+x_val = X[1000:2000,:]
+y_val = y[1000:2000]
 
 x_test, y_test = loadlocal_mnist(
         images_path='./data/raw/t10k-images-idx3-ubyte', 
         labels_path='./data/raw/t10k-labels-idx1-ubyte')
-x_test = x_test/255
+x_test = x_test
 
 data = {
     'X_train': x_train,    # training data
@@ -27,8 +27,10 @@ data = {
 
 #model = SoftmaxClassifier(input_dim=784, hidden_dim=None, weight_scale=1e-2, reg=0)
 #learning_rate = 1e-3
+#data should be divided by 255
 
 model = SoftmaxClassifier(input_dim=784, hidden_dim=800, weight_scale=1e-3, reg=0)
+#no divided by 255
 
 solver = Solver(model, data,
                       update_rule='sgd',

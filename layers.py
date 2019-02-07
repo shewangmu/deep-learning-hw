@@ -1,5 +1,7 @@
 from builtins import range
 import numpy as np
+from scipy.signal import convolve2d
+
 
 
 def fc_forward(x, w, b):
@@ -353,7 +355,7 @@ def dropout_backward(dout, cache):
     return dx
 
 
-def conv_forward(x, w):
+def conv_forward(x, w, b):
     """
     The input consists of N data points, each with C channels, height H and
     width W. We convolve each input with F different filters, where each filter
@@ -380,21 +382,18 @@ def conv_forward(x, w):
     W_prime = 1+ W - WW
     
     out = np.zeros((N, F, H_prime, W_prime))
-    for i in range(N):
-        x_temp = x[i]
-        
-        for j in range(H_prime):
-            for k in range(W_prime):
-                local_receptive = x_temp[:, j:j+HH, k:k+WW]
+    for n in range(N):
+        for c in range(C):
+            for f in range(F):
+                out[n,c,:,:]+=convolve2d(w[f,c,:,:],x[n,c,:,:],mode='valid')
                 
-                for f in range(F):
-                    w_temp = np.flip(w[f], 1)
-                    w_temp = np.flip(w_temp, 2)
-                    out[i,f,j,k] = np.sum(local_receptive * w_temp)
+    
+    
+
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
-    cache = (x, w)
+    cache = (x, w, b)
     return out, cache
 
 
@@ -412,9 +411,11 @@ def conv_backward(dout, cache):
     ###########################################################################
     # TODO: Implement the convolutional backward pass.                        #
     ###########################################################################
-    x, w = cache
+    x, w, b = cache
     w_tilt = np.flip(w, 2)
     w_tilt = np.flip(w_tilt, 3)
+    dout_tilt = np.flip(dout, 2)
+    dout_tilt= np.flip(dout_tilt,3)
     N, C, H, W = x.shape
     F, C, HH, WW = w.shape
     N, F, H_t, W_t = dout.shape
@@ -423,32 +424,18 @@ def conv_backward(dout, cache):
     W_prime = W_t + WW - 1 
     
     dx = np.zeros((N, C, H_prime, W_prime))
-    for c in range(C):
-        w_temp = np.pad(w_tilt[:,c,:,:], ((0,0),(H_t,H_t),(W_t,W_t)), 'constant', constant_values=(0,0))
-        
-        for h in range(H_prime):
-            for w in range(W_prime):
-                local_receptive = w_temp[:, h:h+H_t, w:w+W_t]
-                
-                for n in range(N):
-                    dout_temp = np.flip(dout[n], 1)
-                    dout_temp = np.flip(dout_temp, 2)
-                    dx[n,c,h,w] = np.sum(local_receptive * dout_temp)
+    for n in range(N):
+        for c in range(C):
+            for f in range(F):
+                dx[n,c,:,:]+=convolve2d(w_tilt[f,c,:,:],dout[n,f,:,:],mode='full')
      
     dw = np.zeros((F, C, HH, WW))
-    for c in range(c):
-        x_temp = x[:,c,:,:]
+    for n in range(N):
+        for c in range(C):
+            for f in range(F):
+                dw[f,c,:,:]+=convolve2d(x[n,c,:,:],dout_tilt[n,f,:,:],mode='valid')
         
-        for h in range(HH):
-            for w in range(WW):
-                local_receptive = x_temp[:, h:h+H_t, w:w+W_t]
-                
-                for f in range(F):
-                    dout_temp = np.flip(dout[:,f,:,:], 1)
-                    dout_temp = np.flip(dout_temp, 2)
-                    dw[f,c,h,w] = np.sum(local_receptive*dout_temp)
-        
-    db = dout
+    db = np.zeros_like(b)
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################

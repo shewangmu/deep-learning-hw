@@ -353,7 +353,7 @@ def dropout_backward(dout, cache):
     return dx
 
 
-def conv_forward(x, w):
+def conv_forward(x, w, b):
     """
     The input consists of N data points, each with C channels, height H and
     width W. We convolve each input with F different filters, where each filter
@@ -394,7 +394,7 @@ def conv_forward(x, w):
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
-    cache = (x, w)
+    cache = (x, w, b)
     return out, cache
 
 
@@ -412,7 +412,7 @@ def conv_backward(dout, cache):
     ###########################################################################
     # TODO: Implement the convolutional backward pass.                        #
     ###########################################################################
-    x, w = cache
+    x, w, b = cache
     w_tilt = np.flip(w, 2)
     w_tilt = np.flip(w_tilt, 3)
     N, C, H, W = x.shape
@@ -448,7 +448,7 @@ def conv_backward(dout, cache):
                     dout_temp = np.flip(dout_temp, 2)
                     dw[f,c,h,w] = np.sum(local_receptive*dout_temp)
         
-    db = dout
+    db = np.zeros_like(b)
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################

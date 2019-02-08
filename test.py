@@ -55,6 +55,7 @@ def train(model, learning_rate=1e-2):
     print("test accuracy is:{}".format(acc/250))
     return y_pred
     
-#y_pred_svm = train(model_2, learning_rate = 1e-2)
-
+y_pred_svm = train(model_2, learning_rate = 1e-2)
+print("SVM")
 y_pred_logistic = train(model_1, learning_rate=5e-1)
+print("Logistic")

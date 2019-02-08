@@ -20,59 +20,46 @@ class VGG(nn.Module):
             # Stage 1
             # TODO: convolutional layer, input channels 3, output channels 8, filter size 3
             # TODO: max-pooling layer, size 2
-            torch.nn.Conv2d(3, 8, 3, 
-                            stride=1, padding=0, dilation=1, groups=1, bias=True),
-            torch.nn.MaxPool2d(2, stride=None, padding=0, 
-                               dilation=1, return_indices=False, ceil_mode=False),
+            nn.Conv2d(in_channels=3, out_channels=8, kernel_size=3, padding=1),
+            nn.MaxPool2d(kernel_size=2),
             
             # Stage 2
             # TODO: convolutional layer, input channels 8, output channels 16, filter size 3
             # TODO: max-pooling layer, size 2
-            torch.nn.Conv2d(8, 16, 3, 
-                            stride=1, padding=0, dilation=1, groups=1, bias=True),
-            torch.nn.MaxPool2d(2, stride=None, padding=0, 
-                               dilation=1, return_indices=False, ceil_mode=False),
+            nn.Conv2d(in_channels=8, out_channels=16, kernel_size=3, padding=1),
+            nn.MaxPool2d(kernel_size=2),
             
             # Stage 3
             # TODO: convolutional layer, input channels 16, output channels 32, filter size 3
             # TODO: convolutional layer, input channels 32, output channels 32, filter size 3
             # TODO: max-pooling layer, size 2
-            torch.nn.Conv2d(16, 32, 3, 
-                            stride=1, padding=0, dilation=1, groups=1, bias=True),
-            torch.nn.Conv2d(32, 32, 3, 
-                            stride=1, padding=0, dilation=1, groups=1, bias=True),
-            torch.nn.MaxPool2d(2, stride=None, padding=0, 
-                               dilation=1, return_indices=False, ceil_mode=False),
+            torch.nn.Conv2d(in_channels=16, out_channels=32, kernel_size=3, padding=1),
+            torch.nn.Conv2d(in_channels=32, out_channels=32, kernel_size=3, padding=1),
+            torch.nn.MaxPool2d(kernel_size=2),
             
             # Stage 4
             # TODO: convolutional layer, input channels 32, output channels 64, filter size 3
             # TODO: convolutional layer, input channels 64, output channels 64, filter size 3
             # TODO: max-pooling layer, size 2
-            torch.nn.Conv2d(32, 64, 3, 
-                            stride=1, padding=0, dilation=1, groups=1, bias=True),
-            torch.nn.Conv2d(16, 64, 3, 
-                            stride=1, padding=0, dilation=1, groups=1, bias=True),
-            torch.nn.MaxPool2d(2, stride=None, padding=0, 
-                               dilation=1, return_indices=False, ceil_mode=False),
+            
+            torch.nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, padding=1),
+            torch.nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, padding=1),
+            torch.nn.MaxPool2d(kernel_size=2),
             
             # Stage 5
             # TODO: convolutional layer, input channels 64, output channels 64, filter size 3
             # TODO: convolutional layer, input channels 64, output channels 64, filter size 3
             # TODO: max-pooling layer, size 2
-            torch.nn.Conv2d(64, 64, 3, 
-                            stride=1, padding=0, dilation=1, groups=1, bias=True),
-            torch.nn.Conv2d(64, 64, 3, 
-                            stride=1, padding=0, dilation=1, groups=1, bias=True),
-            torch.nn.MaxPool1d(2, stride=None, padding=0, 
-                               dilation=1, return_indices=False, ceil_mode=False)
+            torch.nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, padding=1),
+            torch.nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, padding=1),
+            torch.nn.MaxPool2d(kernel_size=2)
             
         )
         self.fc = nn.Sequential(
             # TODO: fully-connected layer (64->64)
             # TODO: fully-connected layer (64->10)
-            torch.nn.Linear(64, 10, bias=True),
-            torch.nn.Linear(64, 10, bias=True)
-            
+            torch.nn.Linear(64, 64, bias=True),
+            torch.nn.Linear(64, 10, bias=True)  
         )
 
     def forward(self, x):
@@ -88,6 +75,9 @@ def train(trainloader, net, criterion, optimizer, device):
         running_loss = 0.0
         for i, (images, labels) in enumerate(trainloader):
             images = images.to(device)
+            N, C, H, W = images.shape
+#            images = torch.nn.functional.upsample(images, size=(150,150), 
+#                                                  scale_factor=None, mode='bilinear', align_corners=None)
             labels = labels.to(device)
             # TODO: zero the parameter gradients
             # TODO: forward pass
@@ -95,8 +85,8 @@ def train(trainloader, net, criterion, optimizer, device):
             # TODO: optimize the network
             optimizer.zero_grad()
             outputs = net(images)
-            loss = criterion(outputs, labels)
-            loss.backward()
+            running_loss = criterion(outputs, labels)
+            running_loss.backward()
             optimizer.step()
             
             # print statistics
@@ -127,19 +117,20 @@ def test(testloader, net, device):
 
 
 def main():
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    #device = torch.device('cpu')
+    #device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    device = torch.device('cpu')
+    
     transform = transforms.Compose(
         [transforms.ToTensor(),
          transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
 
     trainset = torchvision.datasets.CIFAR10(root='./data', train=True,
-                                        download=True, transform=transform)
+                                        download=False, transform=transform)
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=100,
                                           shuffle=True)
 
     testset = torchvision.datasets.CIFAR10(root='./data', train=False,
-                                       download=True, transform=transform)
+                                       download=False, transform=transform)
     testloader = torch.utils.data.DataLoader(testset, batch_size=100,
                                          shuffle=False)
     net = VGG().to(device)
@@ -153,3 +144,4 @@ def main():
 if __name__== "__main__":
     main()
    
+#70%

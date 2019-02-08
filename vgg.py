@@ -20,29 +20,59 @@ class VGG(nn.Module):
             # Stage 1
             # TODO: convolutional layer, input channels 3, output channels 8, filter size 3
             # TODO: max-pooling layer, size 2
+            torch.nn.Conv2d(3, 8, 3, 
+                            stride=1, padding=0, dilation=1, groups=1, bias=True),
+            torch.nn.MaxPool2d(2, stride=None, padding=0, 
+                               dilation=1, return_indices=False, ceil_mode=False),
             
             # Stage 2
             # TODO: convolutional layer, input channels 8, output channels 16, filter size 3
             # TODO: max-pooling layer, size 2
+            torch.nn.Conv2d(8, 16, 3, 
+                            stride=1, padding=0, dilation=1, groups=1, bias=True),
+            torch.nn.MaxPool2d(2, stride=None, padding=0, 
+                               dilation=1, return_indices=False, ceil_mode=False),
             
             # Stage 3
             # TODO: convolutional layer, input channels 16, output channels 32, filter size 3
             # TODO: convolutional layer, input channels 32, output channels 32, filter size 3
             # TODO: max-pooling layer, size 2
+            torch.nn.Conv2d(16, 32, 3, 
+                            stride=1, padding=0, dilation=1, groups=1, bias=True),
+            torch.nn.Conv2d(32, 32, 3, 
+                            stride=1, padding=0, dilation=1, groups=1, bias=True),
+            torch.nn.MaxPool2d(2, stride=None, padding=0, 
+                               dilation=1, return_indices=False, ceil_mode=False),
             
             # Stage 4
             # TODO: convolutional layer, input channels 32, output channels 64, filter size 3
             # TODO: convolutional layer, input channels 64, output channels 64, filter size 3
             # TODO: max-pooling layer, size 2
-
+            torch.nn.Conv2d(32, 64, 3, 
+                            stride=1, padding=0, dilation=1, groups=1, bias=True),
+            torch.nn.Conv2d(16, 64, 3, 
+                            stride=1, padding=0, dilation=1, groups=1, bias=True),
+            torch.nn.MaxPool2d(2, stride=None, padding=0, 
+                               dilation=1, return_indices=False, ceil_mode=False),
+            
             # Stage 5
             # TODO: convolutional layer, input channels 64, output channels 64, filter size 3
             # TODO: convolutional layer, input channels 64, output channels 64, filter size 3
             # TODO: max-pooling layer, size 2
+            torch.nn.Conv2d(64, 64, 3, 
+                            stride=1, padding=0, dilation=1, groups=1, bias=True),
+            torch.nn.Conv2d(64, 64, 3, 
+                            stride=1, padding=0, dilation=1, groups=1, bias=True),
+            torch.nn.MaxPool1d(2, stride=None, padding=0, 
+                               dilation=1, return_indices=False, ceil_mode=False)
+            
         )
         self.fc = nn.Sequential(
             # TODO: fully-connected layer (64->64)
             # TODO: fully-connected layer (64->10)
+            torch.nn.Linear(64, 10, bias=True),
+            torch.nn.Linear(64, 10, bias=True)
+            
         )
 
     def forward(self, x):
@@ -63,6 +93,11 @@ def train(trainloader, net, criterion, optimizer, device):
             # TODO: forward pass
             # TODO: backward pass
             # TODO: optimize the network
+            optimizer.zero_grad()
+            outputs = net(images)
+            loss = criterion(outputs, labels)
+            loss.backward()
+            optimizer.step()
             
             # print statistics
             # running_loss += loss.item()

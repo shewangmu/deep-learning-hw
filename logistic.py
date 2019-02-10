@@ -84,10 +84,10 @@ class LogisticClassifier(object):
         w1 = self.params['w1']
         b1 = self.params['b1']
         y_pred1, cache = fc_forward(X, w1, b1)
-        scores1 = 1/(np.exp(-y_pred1)+1)   #sigmoid
+        relu, y_pred1 = relu_forward(y_pred1)  #sigmoid
         w2 = self.params['w2']
         b2 = self.params['b2']
-        y_pred2, cache2 = fc_forward(scores1, w2, b2)
+        y_pred2, cache2 = fc_forward(relu, w2, b2)
         scores = 1/(np.exp(-y_pred2)+1)
     ############################################################################
     #                             END OF YOUR CODE                             #
@@ -113,14 +113,14 @@ class LogisticClassifier(object):
         grads['w1'] = dw1 + reg*2*w1
         grads['b1'] = db1 
     else:
-        loss, dout2 = logistic_loss(y_pred2, y)
+        loss, dy_pred2 = logistic_loss(y_pred2, y)
         loss += reg * np.linalg.norm(w2, ord=2)**2
-        dout1, dw2, db2 = fc_backward(dout2, cache2)
+        drelu, dw2, db2 = fc_backward(dy_pred2, cache2)
         grads['w2'] = dw2 + reg*2*w2
         grads['b2'] = db2
-        dout = dout1 * scores1 * (1-scores1)
-        dx, dw1, db1 = fc_backward(dout, cache)
-        grads['w1'] = dw1 + reg*2*w1
+        dy_pred1 = relu_backward(drelu, y_pred1)
+        dx, dw1, db1 = fc_backward(dy_pred1, cache)
+        grads['w1'] = dw1
         grads['b1'] = db1
         
     ############################################################################

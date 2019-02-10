@@ -31,9 +31,9 @@ data = {
 }
 
 model_1 = LogisticClassifier(input_dim=20, hidden_dim=30, weight_scale=1, reg=0)
-model_2 = SVM(input_dim=20, hidden_dim=30, weight_scale=1, reg=0)
+#model_2 = SVM(input_dim=20, hidden_dim=30, weight_scale=1, reg=0)
 
-def train(model, learning_rate=1e-2):
+def train(model, learning_rate=5e-2):
     solver = Solver(model, data,
                       update_rule='sgd',
                       optim_config={

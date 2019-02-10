@@ -103,7 +103,7 @@ def main():
                                          shuffle=False)
     net = VGG().to(device)
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(net.parameters(), lr=0.001)
+    optimizer = optim.Adam(params=net.parameters(), lr=0.001)
 
     train(trainloader, net, criterion, optimizer, device)
     test(testloader, net, device)
@@ -111,10 +111,10 @@ def main():
 
 if __name__== "__main__":
     main()
-'''
+
     
    
-#70%
+'''
 
 from mlxtend.data import loadlocal_mnist
 from cnn import *
@@ -153,13 +153,13 @@ model = ConvNet(num_filters=32, filter_size=7,
 #no divided by 255
 
 solver = Solver(model, data,
-                      update_rule='sgd_momentum',
+                      update_rule='adam',
                       optim_config={
                         'learning_rate': 1e-2,  #hidden layer
                         #'learning_rate': 0.5, #single layer
                       },
                       lr_decay=0.95,
-                      num_epochs=10, batch_size=10,
+                      num_epochs=10, batch_size=100,
                       print_every=10)
 solver.train()
 plt.plot(solver.loss_history)

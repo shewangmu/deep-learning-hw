@@ -8,10 +8,10 @@ X, y = loadlocal_mnist(
         images_path='./data/raw/train-images-idx3-ubyte', 
         labels_path='./data/raw/train-labels-idx1-ubyte')
 
-x_train = X[:1000,:]
-y_train = y[:1000]
-x_val = X[1000:2000,:]
-y_val = y[1000:2000]
+x_train = X[:10000,:]
+y_train = y[:10000]
+x_val = X[10000:20000,:]
+y_val = y[10000:20000]
 
 x_test, y_test = loadlocal_mnist(
         images_path='./data/raw/t10k-images-idx3-ubyte', 
@@ -39,7 +39,7 @@ solver = Solver(model, data,
                         #'learning_rate': 0.5, #single layer
                       },
                       lr_decay=0.95,
-                      num_epochs=50, batch_size=10,
+                      num_epochs=20, batch_size=10,
                       print_every=1000)
 solver.train()
 plt.plot(solver.loss_history)

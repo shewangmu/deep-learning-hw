@@ -126,21 +126,15 @@ class SoftmaxClassifier(object):
         # of 0.5 to simplify the expression for the gradient.                      #
         ############################################################################
         reg = self.reg
-        loss, dscores = softmax_loss(scores, y)
-        dexp = np.zeros_like(dscores)
-        for i in range(len(dscores)):
-            l = y[i]
-            dexp[i] = dscores[i]*(np.sum(exp[i])-exp[i][l])/np.sum(exp[i])**2
         if hidden_dim == None or hidden_dim==0:
-            ds_fc = dexp * exp
+            loss, ds_fc = softmax_loss(s_fc, y)
             loss += reg*np.linalg.norm(w, ord=2)**2
             dx, dw, db = fc_backward(ds_fc, cache)
             dw += 2*reg*w
             grads['W1'] = dw
             grads['b1'] = db
         else:
-
-            ds_fc2 = dexp * exp
+            loss, ds_fc2 = softmax_loss(s_fc2, y)
             loss += reg*np.linalg.norm(w2, ord=2)**2
             ds_relu, dw2, db2 = fc_backward(ds_fc2, cache2)
             ds_fc1 = relu_backward(ds_relu, s_fc1)

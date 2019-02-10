@@ -1,6 +1,6 @@
 from builtins import range
 import numpy as np
-from scipy.signal import convolve2d
+from scipy.signal import convolve2d, correlate2d
 
 
 
@@ -20,7 +20,8 @@ def fc_forward(x, w, b):
     - out: output, of shape (N, d_1, ..., d_k-1, d_o)
     - cache: (x, w, b)
     """
-    out = x@w +b
+    x_resp = np.reshape(x, (x.shape[0],-1))
+    out = x_resp@w +b
     ###########################################################################
     # TODO: Implement the forward pass. Store the result in out.              #
     ###########################################################################
@@ -54,7 +55,7 @@ def fc_backward(dout, cache):
     # TODO: Implement the affine backward pass.                               #
     ###########################################################################
     d_o = dout.shape
-    if len(d_o)==1:
+    if len(d_o)==1 or d_o[1]==1:
         dout = np.reshape(dout, (d_o[0],1))
         w = np.reshape(w, (w.shape[0], 1))  
         dx = dout@w.T
@@ -66,12 +67,11 @@ def fc_backward(dout, cache):
         db = np.sum(db, axis=1)
     else:
         dx = dout@w.T
-        temp_x = np.reshape(x, (-1, np.shape(x)[-1]))
+        dx = np.reshape(dx, x.shape)
+        temp_x = np.reshape(x, (np.shape(x)[0], -1))
         temp_y = np.reshape(dout, (-1, np.shape(dout)[-1]))
         dw = temp_x.T@temp_y
-        db = np.ones((np.shape(w)[-1],))*dout
-        db = np.reshape(db, (dout.shape[-1],-1))
-        db = np.sum(db, axis=1)
+        db = np.sum(dout, axis=0)
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -116,8 +116,11 @@ def relu_backward(dout, cache):
     ###########################################################################
     # TODO: Implement the ReLU backward pass.                                 #
     ###########################################################################
+    mask = x.copy()
+    mask[mask<0] = 0
+    mask[mask>0] = 1
     dx = dout.copy()
-    dx[dx<0] = 0
+    dx = dx * mask
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -165,9 +168,6 @@ def batchnorm_forward(x, gamma, beta, bn_param):
     mode = bn_param['mode']
     eps = bn_param.get('eps', 1e-5)
     momentum = bn_param.get('momentum', 0.9)
-    
-    gamma = bn_param.get('gamma')
-    beta = bn_param.get('beta')
 
     N, D = x.shape
     running_mean = bn_param.get('running_mean', np.zeros(D, dtype=x.dtype))
@@ -200,7 +200,7 @@ def batchnorm_forward(x, gamma, beta, bn_param):
         running_mean = momentum * running_mean + (1 - momentum) * sample_mean
         sample_var = np.var(x, axis=0)
         running_var = momentum * running_var + (1 - momentum) * sample_var
-        x_hat = (x-sample_mean)/(sample_var**2+eps)**0.5
+        x_hat = (x-sample_mean)/(sample_var+eps)**0.5
         out = gamma * x_hat + beta
         cache = (x, x_hat, gamma, beta, eps)
         #######################################################################
@@ -257,9 +257,9 @@ def batchnorm_backward(dout, cache):
     dx_hat = dout*gamma
     sample_mean = np.mean(x, axis=0)
     sample_var = np.var(x, axis=0)
-    dvar_2 = np.sum(dx_hat*(x-sample_mean)*(-0.5)*(sample_var**2+eps)**(-3/2), axis=0)
-    dmean = np.sum(dx_hat*(-1)/(sample_var**2+eps)**0.5, axis=0)
-    dx = dx_hat/(sample_var**2+eps)**0.5 + dvar_2*2*(x-sample_mean)/N + dmean/N
+    dvar_2 = np.sum(dx_hat*(x-sample_mean)*(-0.5)*(sample_var+eps)**(-3/2), axis=0)
+    dmean = np.sum(dx_hat*(-1)/(sample_var+eps)**0.5, axis=0)
+    dx = dx_hat/(sample_var+eps)**0.5 + dvar_2*2*(x-sample_mean)/N + dmean/N
     dgamma = np.sum(dout*x_hat, axis=0)
     dbeta = np.sum(dout, axis=0)
     ###########################################################################
@@ -307,7 +307,7 @@ def dropout_forward(x, dropout_param):
         # TODO: Implement training phase forward pass for inverted dropout.   #
         # Store the dropout mask in the mask variable.                        #
         #######################################################################
-        mask = (np.random.rand(*x) < p)/p
+        mask = (np.random.random(x.shape) < p)
         out = x * mask
         #######################################################################
         #                           END OF YOUR CODE                          #
@@ -344,8 +344,6 @@ def dropout_backward(dout, cache):
         #######################################################################
         # TODO: Implement training phase backward pass for inverted dropout   #
         #######################################################################
-        mask = dout.clone()
-        mask[mask!=0] = 1/p
         dx = dout * mask
         #######################################################################
         #                          END OF YOUR CODE                           #
@@ -355,7 +353,7 @@ def dropout_backward(dout, cache):
     return dx
 
 
-def conv_forward(x, w, b):
+def conv_forward(x, w):
     """
     The input consists of N data points, each with C channels, height H and
     width W. We convolve each input with F different filters, where each filter
@@ -376,6 +374,7 @@ def conv_forward(x, w, b):
     # TODO: Implement the convolutional forward pass.                         #
     # Hint: you can use the function np.pad for padding.                      #
     ###########################################################################
+    
     N, C, H, W  = x.shape
     F, C, HH, WW = w.shape
     H_prime = 1 + H - HH
@@ -385,15 +384,14 @@ def conv_forward(x, w, b):
     for n in range(N):
         for c in range(C):
             for f in range(F):
-                out[n,c,:,:]+=convolve2d(w[f,c,:,:],x[n,c,:,:],mode='valid')
-                
+                out[n,f,:,:]+=convolve2d(w[f,c,:,:],x[n,c,:,:],mode='valid')     
     
     
 
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
-    cache = (x, w, b)
+    cache = (x, w)
     return out, cache
 
 
@@ -407,18 +405,18 @@ def conv_backward(dout, cache):
     - dx: Gradient with respect to x
     - dw: Gradient with respect to w
     """
+    
     dx, dw = None, None
     ###########################################################################
     # TODO: Implement the convolutional backward pass.                        #
     ###########################################################################
-    x, w, b = cache
-    w_tilt = np.flip(w, 2)
-    w_tilt = np.flip(w_tilt, 3)
-    dout_tilt = np.flip(dout, 2)
-    dout_tilt= np.flip(dout_tilt,3)
+    x, w = cache
     N, C, H, W = x.shape
     F, C, HH, WW = w.shape
     N, F, H_t, W_t = dout.shape
+    
+    w_tilt = np.flip(w, axis=2)
+    w_tilt = np.flip(w_tilt, axis=3)
     
     H_prime = H_t + HH - 1
     W_prime = W_t + WW - 1 
@@ -427,19 +425,22 @@ def conv_backward(dout, cache):
     for n in range(N):
         for c in range(C):
             for f in range(F):
-                dx[n,c,:,:]+=convolve2d(w_tilt[f,c,:,:],dout[n,f,:,:],mode='full')
+                #w_temp = np.flip(np.flip(w[f,c], axis=0),axis=1)
+                dx[n,c,:,:]+=convolve2d(w_tilt[f,c,:,:],dout[n,f,:,:],mode='full', boundary='fill')
      
     dw = np.zeros((F, C, HH, WW))
     for n in range(N):
         for c in range(C):
             for f in range(F):
-                dw[f,c,:,:]+=convolve2d(x[n,c,:,:],dout_tilt[n,f,:,:],mode='valid')
-        
-    db = np.zeros_like(b)
+                dw[f,c,:,:]+=correlate2d(x[n,c,:,:],dout[n,f,:,:],mode='valid')
+                
+    
+    dw = np.flip(dw, 2)
+    dw = np.flip(dw, 3)
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
-    return dx, dw, db
+    return dx, dw
 
 
 def max_pool_forward(x, pool_param):
@@ -552,6 +553,7 @@ def svm_loss(x, y):
   - loss: Scalar giving the loss
   - dx: Gradient of the loss with respect to x
   """
+  x = x.reshape(x.shape[0],)
   y_pred = y.copy()
   y_pred[y_pred==0]=-1
   loss = 1- y_pred*x
@@ -562,6 +564,7 @@ def svm_loss(x, y):
   dx = dx*mask
   N = x.shape
   loss = np.sum(loss)/N
+  dx = (dx/N).reshape((x.shape[0],1))
   return loss, dx
 
 
@@ -574,12 +577,15 @@ def logistic_loss(x, y):
   - y: Vector of labels, of shape (N,) where y[i] is the label for x[i]
   Returns a tuple of:
   - loss: Scalar giving the loss
-  - dx: Gradient of the loss with respect to x
+  - dx: Gradient of the loss with respect to x (N,1)
   """
-  N, = x.shape
-  loss = y * np.log(x) + (1-y) * np.log(1-x)
+  N = x.shape[0]
+  x = x.reshape(N,)
+  p = 1/(1+np.exp(-1*x))
+  loss = y * np.log(p) + (1-y) * np.log(1-p)
   loss = -1*np.sum(loss)/N
-  dx = -1*(y/x + (y-1)/(1-x))/N
+  dx = (p - y)/N
+  dx = dx.reshape(-1,1)
   return loss, dx
 
 
@@ -597,13 +603,16 @@ def softmax_loss(x, y):
   - dx: Gradient of the loss with respect to x
   """
   
-  N, = y.shape
+  N, C = x.shape
   loss = 0
+  exp = np.exp(x)
   dx = np.zeros_like(x)
   for i in range(N):
       l = y[i]
-      loss += np.log(x[i][l])
-      dx[i][l] = 1/x[i][l]
+      loss += np.log(exp[i][l]/np.sum(exp[i]))
+      for j in range(C):
+          dx[i][j] = -exp[i][j]/np.sum(exp[i])
+      dx[i][l] = 1 - exp[i][l]/np.sum(exp[i])
   loss = -loss/N    
   dx = -dx/N
   return loss, dx

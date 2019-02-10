@@ -80,7 +80,7 @@ class ConvNet(object):
     pad_num = int(conv_param['pad'])
     x_pad = np.pad(X, ((0,0),(0,0),(pad_num,pad_num),(pad_num,pad_num)), 'constant', constant_values=(0,0))
     
-    s_conv, cache1 = conv_forward(x_pad, W1, b1)
+    s_conv, cache1 = conv_forward(x_pad, W1)
     s_conv_relu, s_conv = relu_forward(s_conv)
     # pass pool_param to the forward pass for the max-pooling layer
     pool_param = {'pool_height': 2, 'pool_width': 2, 'stride': 2}
@@ -116,19 +116,15 @@ class ConvNet(object):
     # data loss using softmax, and make sure that grads[k] holds the gradients #
     # for self.params[k]. Don't forget to add L2 regularization!               #
     ############################################################################
-    loss, dscores = softmax_loss(scores, y)
-    dexp = np.zeros_like(dscores)
-    for i in range(len(dscores)):
-        l = y[i]
-        dexp[i] = dscores[i]*(np.sum(exp[i])-exp[i][l])/np.sum(exp[i])**2
-    ds_fc2 = dexp * exp
+    loss, ds_fc2 = softmax_loss(s_fc2, y)
     ds_relu1, dw3, db3 = fc_backward(ds_fc2, cache4)
     ds_fc1 = relu_backward(ds_relu1, s_fc1)
     ds_max, dw2, db2 = fc_backward(ds_fc1, cache3)
     ds_max = ds_max.reshape(s_max_size)
     ds_conv_relu = max_pool_backward(ds_max, cache2)
     ds_conv = relu_backward(ds_conv_relu, s_conv)
-    dx, dw1, db1 = conv_backward(ds_conv, cache1)
+    dx, dw1 = conv_backward(ds_conv, cache1)
+    db1 = np.zeros_like(b1)
     
     grads['W1'] = dw1
     grads['b1'] = db1

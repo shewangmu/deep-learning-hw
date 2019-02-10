@@ -107,17 +107,14 @@ class LogisticClassifier(object):
     ############################################################################
     reg = self.reg
     if self.hidden_dim is None:
-        loss, ds = logistic_loss(scores, y)
+        loss, dout = logistic_loss(y_pred, y)
         loss += reg * np.linalg.norm(w1, ord=2)**2
-        dy_pred = scores*(1-scores)
-        dout = ds * dy_pred
         dx, dw1, db1 = fc_backward(dout, cache)
         grads['w1'] = dw1 + reg*2*w1
         grads['b1'] = db1 
     else:
-        loss, ds = logistic_loss(scores, y)
+        loss, dout2 = logistic_loss(y_pred2, y)
         loss += reg * np.linalg.norm(w2, ord=2)**2
-        dout2 = ds * scores * (1-scores) #sigmoid
         dout1, dw2, db2 = fc_backward(dout2, cache2)
         grads['w2'] = dw2 + reg*2*w2
         grads['b2'] = db2

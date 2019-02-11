@@ -30,12 +30,12 @@ data = {
     'y_val': y_val         # validation labels
 }
 
-model_1 = LogisticClassifier(input_dim=20, hidden_dim=30, weight_scale=1, reg=0)
-#model_2 = SVM(input_dim=20, hidden_dim=30, weight_scale=1, reg=0)
+model_1 = LogisticClassifier(input_dim=20, hidden_dim=None, weight_scale=1, reg=0)
+model_2 = SVM(input_dim=20, hidden_dim=30, weight_scale=1, reg=0)
 
-def train(model, learning_rate=5e-2):
+def train(model, learning_rate=6e-2):
     solver = Solver(model, data,
-                      update_rule='sgd',
+                      update_rule='sgd_momentum',
                       optim_config={
                         'learning_rate': learning_rate,  #hidden layer
                         #'learning_rate': 0.5, #single layer
@@ -44,7 +44,7 @@ def train(model, learning_rate=5e-2):
                       num_epochs=50, batch_size=10,
                       print_every=100)
     solver.train()
-    plt.plot(solver.loss_history)
+#    plt.plot(solver.loss_history)
     
     scores = model.loss(x_test)
     y_pred = [int(round(i)) for i in scores]

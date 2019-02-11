@@ -126,10 +126,10 @@ X, y = loadlocal_mnist(
         images_path='./data/raw/train-images-idx3-ubyte', 
         labels_path='./data/raw/train-labels-idx1-ubyte')
 
-x_train = X[:100,:].reshape((-1, 1, 28, 28))/255
-y_train = y[:100]
-x_val = X[100:200,:].reshape((-1, 1, 28, 28))/255
-y_val = y[100:200]
+x_train = X[:1000,:].reshape((-1, 1, 28, 28))/255
+y_train = y[:1000]
+x_val = X[1000:2000,:].reshape((-1, 1, 28, 28))/255
+y_val = y[1000:2000]
 
 x_test, y_test = loadlocal_mnist(
         images_path='./data/raw/t10k-images-idx3-ubyte', 

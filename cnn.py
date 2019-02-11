@@ -55,6 +55,8 @@ class ConvNet(object):
     self.params['b2'] = np.zeros((hidden_dim,))
     self.params['W3'] = np.random.normal(scale = weight_scale, size = (hidden_dim, num_classes))
     self.params['b3'] = np.zeros((num_classes,))
+    self.params['gamma'] = np.random.normal(scale = weight_scale, size = hidden_dim)
+    self.params['beta'] = np.random.normal(scale = weight_scale, size = hidden_dim)
     ############################################################################
     #                             END OF YOUR CODE                             #
     ############################################################################
@@ -94,7 +96,19 @@ class ConvNet(object):
     ############################################################################
     s_max_size = s_max.shape
     s_max = s_max.reshape((s_max_size[0],-1))
+    gamma = self.params['gamma']
+    beta = self.params['beta']
+    if y is not None:
+        bn_param = {'mode':'train'}
+        dropout_param = {'mode':'train', 'p':0.7}
+    else:
+        bn_param = {'mode':'test'}
+        dropout_param = {'mode':'test','p':0.7}
+    
     s_fc1, cache3 = fc_forward(s_max, W2, b2)
+    s_norm, cache_norm = batchnorm_forward(s_fc1, gamma, beta, bn_param)
+    s_dropout, cache_drop = dropout_forward(s_norm, dropout_param)
+    
     s_relu1, s_fc1 = relu_forward(s_fc1)
     s_fc2, cache4 = fc_forward(s_relu1, W3, b3)
     
@@ -119,7 +133,11 @@ class ConvNet(object):
     loss, ds_fc2 = softmax_loss(s_fc2, y)
     ds_relu1, dw3, db3 = fc_backward(ds_fc2, cache4)
     ds_fc1 = relu_backward(ds_relu1, s_fc1)
-    ds_max, dw2, db2 = fc_backward(ds_fc1, cache3)
+    
+    ds_norm = dropout_backward(ds_fc1, cache_drop)
+    ds_fc1, dgamma, dbeta = batchnorm_backward(ds_norm, cache_norm)
+    
+    ds_max, dw2, db2 = fc_backward(ds_fc1, cache3)    
     ds_max = ds_max.reshape(s_max_size)
     ds_conv_relu = max_pool_backward(ds_max, cache2)
     ds_conv = relu_backward(ds_conv_relu, s_conv)
@@ -132,6 +150,8 @@ class ConvNet(object):
     grads['b2'] = db2
     grads['W3'] = dw3
     grads['b3'] = db3
+    grads['gamma'] = dgamma
+    grads['beta'] = dbeta
     ############################################################################
     #                             END OF YOUR CODE                             #
     ############################################################################
